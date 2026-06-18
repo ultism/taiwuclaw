@@ -1,3 +1,4 @@
+using System.Text;
 using System.Threading;
 using TaiwuClaw.Agent;
 using UnityEngine;
@@ -32,16 +33,29 @@ namespace TaiwuClaw.UI
 
         public static GameObject Instance { get; private set; }
 
-        private void Update()
-        {
-            if (Input.GetKeyDown(KeyCode.F8))
-                _visible = !_visible;
-        }
+        private bool _loggedAlive;
+
+        // 切换键。通过 IMGUI 的 Event.current 检测，不依赖新/旧 Input System。
+        private static readonly KeyCode ToggleKey = KeyCode.F8;
 
         private void OnGUI()
         {
+            if (!_loggedAlive)
+            {
+                _loggedAlive = true;
+                Debug.Log($"[TaiwuClaw] ChatPanel 已就绪，按 {ToggleKey} 开关；若无效，隐藏时按其它键看日志里上报的 keyCode。");
+            }
+
+            // 裸 F8 被游戏热键层吃掉，Shift+F8 可穿透到 IMGUI
+            var e = Event.current;
+            if (e != null && e.type == EventType.KeyDown && e.keyCode == ToggleKey)
+            {
+                _visible = !_visible;
+                e.Use();
+            }
+
             if (!_visible) return;
-            _window = GUILayout.Window(GetInstanceID(), _window, DrawWindow, "TaiwuClaw 助手  (F8 开关)");
+            _window = GUILayout.Window(GetInstanceID(), _window, DrawWindow, "TaiwuClaw 助手  (Shift+F8 开关)");
         }
 
         private void DrawWindow(int id)
@@ -54,12 +68,17 @@ namespace TaiwuClaw.UI
                 return;
             }
 
-            _scroll = GUILayout.BeginScrollView(_scroll, GUILayout.Height(360));
-            foreach (var line in _runner.Snapshot())
-            {
-                GUILayout.Label(Prefix(line.Role) + line.Text);
-                GUILayout.Space(2);
-            }
+            string transcript = BuildText();
+
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button("复制全部", GUILayout.Width(80)))
+                GUIUtility.systemCopyBuffer = transcript;
+            GUILayout.FlexibleSpace();
+            GUILayout.EndHorizontal();
+
+            // 只读但可选中复制（每帧用最新文本重建，编辑被丢弃）
+            _scroll = GUILayout.BeginScrollView(_scroll, GUILayout.Height(330));
+            GUILayout.TextArea(transcript, GUILayout.ExpandHeight(true));
             GUILayout.EndScrollView();
 
             GUILayout.BeginHorizontal();
@@ -81,6 +100,14 @@ namespace TaiwuClaw.UI
             }
 
             GUI.DragWindow();
+        }
+
+        private string BuildText()
+        {
+            var sb = new StringBuilder();
+            foreach (var line in _runner.Snapshot())
+                sb.Append(Prefix(line.Role)).AppendLine(line.Text).AppendLine();
+            return sb.ToString();
         }
 
         private static string Prefix(string role)
