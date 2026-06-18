@@ -22,6 +22,8 @@ namespace TaiwuClaw.Agent
         public bool Thinking = true;
         /// <summary>可选 effort：low|medium|high|xhigh|max，留空用服务端默认。</summary>
         public string Effort = "";
+        /// <summary>面板 UI 缩放；0=按屏幕高自动(屏幕高/1080)，4K≈2×。手动可填 1.5/2/2.5…</summary>
+        public float UiScale = 0f;
         public string SystemPrompt =
             "你是《太吾绘卷》的游戏内助手。你可以使用 encyclopedia_query 工具检索百晓册（游戏内置百科）" +
             "来回答关于游戏机制、数值、概率、配方、物品、功法等问题。优先检索后基于结果作答，不要凭空编造。";
@@ -58,6 +60,7 @@ namespace TaiwuClaw.Agent
                 c.MaxTokens = o["maxTokens"]?.Value<int>() ?? c.MaxTokens;
                 c.Thinking = o["thinking"]?.Value<bool>() ?? c.Thinking;
                 c.Effort = (string)o["effort"] ?? "";
+                c.UiScale = o["uiScale"]?.Value<float>() ?? 0f;
                 c.SystemPrompt = (string)o["systemPrompt"] ?? c.SystemPrompt;
                 return c;
             }
@@ -79,6 +82,7 @@ namespace TaiwuClaw.Agent
             ["maxTokens"] = MaxTokens,
             ["thinking"] = Thinking,
             ["effort"] = Effort,
+            ["uiScale"] = UiScale,
             ["systemPrompt"] = SystemPrompt,
         };
     }

@@ -35,7 +35,7 @@ namespace TaiwuClaw
                 runner = new AgentRunner(client, registry, _dispatcher, cfg.SystemPrompt);
             }
 
-            ChatPanel.Create(runner, LlmConfig.ConfigPath, ready);
+            ChatPanel.Create(runner, LlmConfig.ConfigPath, ready, cfg?.UiScale ?? 0f);
 
             Debug.Log(ready
                 ? "[TaiwuClaw] agent harness 就绪，按 F8 打开聊天面板。"

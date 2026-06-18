@@ -14,13 +14,14 @@ namespace TaiwuClaw.UI
         private AgentRunner _runner;
         private string _configPath;
         private bool _ready;
+        private float _uiScale; // 0 = 按屏幕高自动
 
         private bool _visible;
         private string _input = "";
         private Vector2 _scroll;
         private Rect _window = new Rect(40, 40, 560, 460);
 
-        public static void Create(AgentRunner runner, string configPath, bool ready)
+        public static void Create(AgentRunner runner, string configPath, bool ready, float uiScale)
         {
             var go = new GameObject("TaiwuClawChatPanel");
             DontDestroyOnLoad(go);
@@ -28,6 +29,7 @@ namespace TaiwuClaw.UI
             panel._runner = runner;
             panel._configPath = configPath;
             panel._ready = ready;
+            panel._uiScale = uiScale;
             Instance = go;
         }
 
@@ -55,7 +57,13 @@ namespace TaiwuClaw.UI
             }
 
             if (!_visible) return;
+
+            // IMGUI 不跟随游戏 UGUI 缩放，自己按屏幕高缩放（4K≈2×）
+            float scale = _uiScale > 0f ? _uiScale : Mathf.Clamp(Screen.height / 1080f, 1f, 4f);
+            Matrix4x4 prev = GUI.matrix;
+            GUI.matrix = Matrix4x4.Scale(new Vector3(scale, scale, 1f));
             _window = GUILayout.Window(GetInstanceID(), _window, DrawWindow, "TaiwuClaw 助手  (Shift+F8 开关)");
+            GUI.matrix = prev;
         }
 
         private void DrawWindow(int id)
