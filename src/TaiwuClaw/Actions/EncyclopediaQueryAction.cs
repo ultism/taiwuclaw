@@ -17,8 +17,20 @@ namespace TaiwuClaw.Actions
         public string Name => "encyclopedia.query";
 
         public string Description =>
-            "全文检索百晓册。参数：keyword(string，必填)、limit(int，默认20)、withTables(bool，默认true)。" +
-            "返回匹配条目的 key、标题路径 titlePath、清洗后的正文 content，以及引用的表格 tables。";
+            "全文检索《太吾绘卷》百晓册（游戏内置百科）。用于回答游戏机制、数值、概率、配方、物品、功法等问题。" +
+            "返回匹配条目的标题路径 titlePath、清洗后的正文 content，以及条目引用的表格 tables。";
+
+        public JObject InputSchema => new JObject
+        {
+            ["type"] = "object",
+            ["properties"] = new JObject
+            {
+                ["keyword"] = new JObject { ["type"] = "string", ["description"] = "要检索的关键词" },
+                ["limit"] = new JObject { ["type"] = "integer", ["description"] = "最多返回条数，默认 20" },
+                ["withTables"] = new JObject { ["type"] = "boolean", ["description"] = "是否拼接引用表格，默认 true" },
+            },
+            ["required"] = new JArray { "keyword" },
+        };
 
         private static readonly Regex TagRegex = new Regex("<[^>]+>", RegexOptions.Compiled);
 

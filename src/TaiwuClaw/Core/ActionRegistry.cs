@@ -14,6 +14,22 @@ namespace TaiwuClaw.Core
 
         public IEnumerable<IAgentAction> All => _actions.Values;
 
+        /// <summary>导出为 Anthropic Messages 的 tools 数组（name/description/input_schema）。</summary>
+        public JArray ToToolsJson()
+        {
+            var arr = new JArray();
+            foreach (var action in _actions.Values)
+            {
+                arr.Add(new JObject
+                {
+                    ["name"] = action.Name,
+                    ["description"] = action.Description,
+                    ["input_schema"] = action.InputSchema ?? new JObject { ["type"] = "object" },
+                });
+            }
+            return arr;
+        }
+
         /// <summary>按名分发。未知 action 抛异常（由通信层转成错误响应）。</summary>
         public JToken Execute(string name, JObject args)
         {

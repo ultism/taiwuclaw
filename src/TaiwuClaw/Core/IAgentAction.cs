@@ -15,6 +15,12 @@ namespace TaiwuClaw.Core
         string Description { get; }
 
         /// <summary>
+        /// 工具入参的 JSON Schema（Anthropic tools 的 input_schema）。
+        /// 形如 {"type":"object","properties":{...},"required":[...]}，模型据此构造调用。
+        /// </summary>
+        JObject InputSchema { get; }
+
+        /// <summary>
         /// 执行能力。默认在 Unity 主线程被调用（见 MainThreadDispatcher），
         /// 因此实现里可安全访问游戏状态。返回值会作为 JSON 响应的 result 字段。
         /// </summary>

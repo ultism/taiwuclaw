@@ -1,20 +1,20 @@
 using TaiwuModdingLib.Core.Plugin;
 using TaiwuClaw.Actions;
+using TaiwuClaw.Agent;
 using TaiwuClaw.Core;
+using TaiwuClaw.UI;
 using UnityEngine;
 
 namespace TaiwuClaw
 {
     /// <summary>
-    /// MOD 入口。组装可扩展 harness：主线程泵 + action 注册表 + HTTP 通信层。
-    /// 新增能力：实现 IAgentAction 并在下方 registry.Register(...) 即可，无需改动通信/调度层。
+    /// MOD 入口。组装游戏内 agent harness：
+    ///   action 注册表（= 给模型的 tools） + 主线程泵 + LLM client + 交错思考工具循环 + IMGUI 聊天面板。
+    /// 新增能力：实现 IAgentAction 并在下方 registry.Register(...) 即可，agent 循环/通信层无需改动。
     /// </summary>
     [PluginConfig("TaiwuClaw", "ultism", "0.1.0")]
     public class ModEntry : TaiwuRemakePlugin
     {
-        private const int Port = 8420;
-
-        private HttpHarnessServer _server;
         private MainThreadDispatcher _dispatcher;
 
         public override void Initialize()
@@ -23,20 +23,31 @@ namespace TaiwuClaw
 
             var registry = new ActionRegistry();
             registry.Register(new EncyclopediaQueryAction());
-            registry.Register(new ListActionsAction(registry)); // 自描述，便于 agent 发现能力
+            registry.Register(new ListActionsAction(registry));
 
-            _server = new HttpHarnessServer(registry, _dispatcher, Port);
-            _server.Start();
+            var cfg = LlmConfig.LoadOrCreate(); // 缺失则写模板返回 null
+            bool ready = cfg != null && cfg.IsReady;
 
-            Debug.Log($"[TaiwuClaw] harness listening on http://127.0.0.1:{Port}/  " +
-                      "(POST body: {\"name\":\"encyclopedia.query\",\"args\":{\"keyword\":\"...\"}})");
+            AgentRunner runner = null;
+            if (ready)
+            {
+                var client = new AnthropicMessagesClient(cfg);
+                runner = new AgentRunner(client, registry, _dispatcher, cfg.SystemPrompt);
+            }
+
+            ChatPanel.Create(runner, LlmConfig.ConfigPath, ready);
+
+            Debug.Log(ready
+                ? "[TaiwuClaw] agent harness 就绪，按 F8 打开聊天面板。"
+                : $"[TaiwuClaw] 已加载，但未配置 LLM。请编辑 {LlmConfig.ConfigPath} 填入 apiKey 后重启。按 F8 查看。");
         }
 
         public override void Dispose()
         {
-            _server?.Stop();
+            if (ChatPanel.Instance != null)
+                Object.Destroy(ChatPanel.Instance);
             _dispatcher?.Shutdown();
-            Debug.Log("[TaiwuClaw] harness stopped.");
+            Debug.Log("[TaiwuClaw] agent harness stopped.");
         }
     }
 }

@@ -12,7 +12,9 @@ namespace TaiwuClaw.Actions
 
         public string Name => "list";
 
-        public string Description => "列出所有可用 action 及其说明。";
+        public string Description => "列出所有可用 action（工具）及其说明。";
+
+        public JObject InputSchema => new JObject { ["type"] = "object", ["properties"] = new JObject() };
 
         public JToken Execute(JObject args)
         {

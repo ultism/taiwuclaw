@@ -28,13 +28,47 @@ dotnet build src/TaiwuClaw/TaiwuClaw.csproj -c Release
 dotnet build src/TaiwuClaw/TaiwuClaw.csproj -c Release -p:TaiwuRoot="D:\Games\The Scroll Of Taiwu"
 ```
 
+## 游戏内 Agent
+
+MOD 在游戏进程内运行一个 agent harness（不是外部进程，也不是单轮聊天）：
+
+- **交错思考 + 工具循环**：模型在 thinking 中决定调用工具、看结果、继续思考，直到收尾。
+- **能力 = 工具**：每个 `IAgentAction`（目前仅 `encyclopedia.query`）作为 tool 暴露给模型；新增能力只需实现接口并 `registry.Register(...)`，agent 循环与通信层无需改动。
+- **LLM 通信**：`ILlmClient` 抽象，当前实现 `AnthropicMessagesClient`（手写 HTTP + Newtonsoft，原样回灌 thinking 块以延续交错思考）；可经兼容 Anthropic Messages 的第三方网关使用，OpenAI chat/responses 格式可后续按同接口扩展。
+- **主线程安全**：HTTP 在后台线程；工具经 `MainThreadDispatcher` 回 Unity 主线程执行。
+- **界面**：游戏内按 **F8** 开关 IMGUI 聊天面板。
+
+### 配置 LLM
+
+首次运行会在 `<游戏根>/Mod/TaiwuClaw/llm.json` 生成模板（**不入库，含密钥**）。填入 `apiKey`（及按需调整 `endpoint`/`model`/`authStyle`）后重启游戏：
+
+```json
+{
+  "endpoint": "https://api.anthropic.com/v1/messages",
+  "model": "claude-opus-4-8",
+  "apiKey": "sk-...",
+  "authStyle": "anthropic",
+  "maxTokens": 16000,
+  "thinking": true
+}
+```
+
+`authStyle`：`anthropic`（`x-api-key` + `anthropic-version`）或 `bearer`（`Authorization: Bearer`）。老模型上若交错思考需 beta 头，填 `"betaHeader": "interleaved-thinking-2025-05-14"`。
+
 ## 仓库结构
 
 ```
-src/TaiwuClaw/      MOD 源码（入口 ModEntry.cs）
-Config.Lua          MOD 清单（部署时复制到游戏 Mod 目录）
-.ref/               反编译参考（本地，.gitignore 忽略，不上传）
+src/TaiwuClaw/
+  ModEntry.cs        入口：组装 registry + dispatcher + client + runner + 面板
+  Core/              IAgentAction / ActionRegistry / MainThreadDispatcher
+  Actions/           EncyclopediaQueryAction（百晓册检索）/ ListActionsAction
+  Agent/             ILlmClient / AnthropicMessagesClient / AgentRunner / LlmConfig
+  UI/                ChatPanel（IMGUI，F8）
+Config.Lua           MOD 清单（部署时复制到游戏 Mod 目录）
+.ref/                反编译参考（本地，.gitignore 忽略，不上传）
 ```
+
+> `llm.json`（含密钥）只生成在游戏 Mod 目录、不在仓库；`.gitignore` 也忽略 `*.log`。
 
 ## MOD 入口约定
 
