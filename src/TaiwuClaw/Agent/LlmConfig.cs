@@ -30,19 +30,41 @@ namespace TaiwuClaw.Agent
 
         public bool IsReady => !string.IsNullOrEmpty(ApiKey) && !string.IsNullOrEmpty(Endpoint);
 
-        /// <summary>配置文件位置：&lt;游戏根&gt;/Mod/TaiwuClaw/llm.json。</summary>
+        /// <summary>
+        /// 配置位置：per-user 可写目录 persistentDataPath/TaiwuClaw/llm.json。
+        /// 刻意放在 mod 内容目录之外——创意工坊上传的是整个 mod 目录，含密钥的配置绝不能在里面。
+        /// </summary>
         public static string ConfigPath =>
+            Path.GetFullPath(Path.Combine(Application.persistentDataPath, "TaiwuClaw", "llm.json"));
+
+        /// <summary>旧位置（mod 目录内），用于一次性迁移。</summary>
+        private static string LegacyConfigPath =>
             Path.GetFullPath(Path.Combine(Application.streamingAssetsPath, "..", "..", "Mod", "TaiwuClaw", "llm.json"));
 
         /// <summary>读取配置；不存在则写模板并返回 null。</summary>
         public static LlmConfig LoadOrCreate()
         {
             string path = ConfigPath;
+            Directory.CreateDirectory(Path.GetDirectoryName(path));
+
+            // 从旧位置迁移：顺带把含密钥的文件移出 mod 目录，避免随创意工坊包上传
+            if (!File.Exists(path) && File.Exists(LegacyConfigPath))
+            {
+                try
+                {
+                    File.Move(LegacyConfigPath, path);
+                    Debug.Log($"[TaiwuClaw] 已将 llm.json 迁出 mod 目录 → {path}");
+                }
+                catch (System.Exception e)
+                {
+                    try { File.Copy(LegacyConfigPath, path, true); File.Delete(LegacyConfigPath); }
+                    catch { Debug.LogWarning("[TaiwuClaw] 迁移 llm.json 失败：" + e.Message); }
+                }
+            }
+
             if (!File.Exists(path))
             {
-                var template = new LlmConfig();
-                Directory.CreateDirectory(Path.GetDirectoryName(path));
-                File.WriteAllText(path, template.ToJson().ToString(Newtonsoft.Json.Formatting.Indented));
+                File.WriteAllText(path, new LlmConfig().ToJson().ToString(Newtonsoft.Json.Formatting.Indented));
                 Debug.LogWarning($"[TaiwuClaw] 已生成 LLM 配置模板：{path}，请填入 apiKey 后重启游戏。");
                 return null;
             }

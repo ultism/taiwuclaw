@@ -13,3 +13,6 @@
 
 # 杂项
 *.log
+
+# LLM 配置（含密钥，绝不入库；运行时生成在 persistentDataPath）
+llm.json
