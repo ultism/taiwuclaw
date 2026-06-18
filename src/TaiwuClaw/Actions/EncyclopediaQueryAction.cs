@@ -14,7 +14,8 @@ namespace TaiwuClaw.Actions
     /// </summary>
     public class EncyclopediaQueryAction : IAgentAction
     {
-        public string Name => "encyclopedia.query";
+        // 工具名只允许 [a-zA-Z0-9_-]，不能带点号（API 会拒）
+        public string Name => "encyclopedia_query";
 
         public string Description =>
             "全文检索《太吾绘卷》百晓册（游戏内置百科）。用于回答游戏机制、数值、概率、配方、物品、功法等问题。" +
