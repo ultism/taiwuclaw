@@ -37,6 +37,10 @@
       <HintPath>$(ManagedDir)\UnityEngine.CoreModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>$(ManagedDir)\Newtonsoft.Json.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
   </ItemGroup>
 
   <!-- 构建后自动部署到游戏 Mod 目录：<游戏>/Mod/TaiwuClaw/{Config.Lua, Plugins/*.dll} -->
