@@ -1,0 +1,53 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <AssemblyName>TaiwuClaw</AssemblyName>
+    <RootNamespace>TaiwuClaw</RootNamespace>
+    <LangVersion>9.0</LangVersion>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <DebugType>portable</DebugType>
+    <!-- 不把引用的游戏程序集复制进输出目录 -->
+    <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
+    <!-- 抑制“引用了为 .NETFramework 构建的程序集”这类跨框架警告 -->
+    <NoWarn>$(NoWarn);MSB3277</NoWarn>
+
+    <!-- 游戏安装路径；如机器不同可用 `dotnet build -p:TaiwuRoot=...` 覆盖 -->
+    <TaiwuRoot Condition="'$(TaiwuRoot)' == ''">G:\SteamLibrary\steamapps\common\The Scroll Of Taiwu</TaiwuRoot>
+    <ManagedDir>$(TaiwuRoot)\The Scroll of Taiwu_Data\Managed</ManagedDir>
+    <TaiwuModDir>$(TaiwuRoot)\Mod\TaiwuClaw</TaiwuModDir>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="TaiwuModdingLib">
+      <HintPath>$(ManagedDir)\TaiwuModdingLib.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Assembly-CSharp">
+      <HintPath>$(ManagedDir)\Assembly-CSharp.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Assembly-CSharp-firstpass">
+      <HintPath>$(ManagedDir)\Assembly-CSharp-firstpass.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.CoreModule">
+      <HintPath>$(ManagedDir)\UnityEngine.CoreModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+
+  <!-- 构建后自动部署到游戏 Mod 目录：<游戏>/Mod/TaiwuClaw/{Config.Lua, Plugins/*.dll} -->
+  <Target Name="DeployToTaiwu" AfterTargets="Build">
+    <MakeDir Directories="$(TaiwuModDir)\Plugins" />
+    <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(TaiwuModDir)\Plugins" />
+    <Copy SourceFiles="$(TargetDir)$(AssemblyName).pdb"
+          DestinationFolder="$(TaiwuModDir)\Plugins"
+          Condition="Exists('$(TargetDir)$(AssemblyName).pdb')" />
+    <Copy SourceFiles="$(MSBuildProjectDirectory)\..\..\Config.Lua" DestinationFolder="$(TaiwuModDir)" />
+    <Message Importance="high" Text="[TaiwuClaw] 已部署到 $(TaiwuModDir)" />
+  </Target>
+
+</Project>
