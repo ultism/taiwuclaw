@@ -81,6 +81,13 @@ namespace TaiwuClaw.UI
             GUILayout.BeginHorizontal();
             if (GUILayout.Button("复制全部", GUILayout.Width(80)))
                 GUIUtility.systemCopyBuffer = transcript;
+            GUI.enabled = !_runner.Busy;
+            if (GUILayout.Button("清空历史", GUILayout.Width(80)))
+            {
+                _runner.Clear();
+                _scroll = Vector2.zero;
+            }
+            GUI.enabled = true;
             GUILayout.FlexibleSpace();
             GUILayout.EndHorizontal();
 

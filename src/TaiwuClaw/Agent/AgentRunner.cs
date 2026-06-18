@@ -50,6 +50,14 @@ namespace TaiwuClaw.Agent
             lock (_lock) return _transcript.ToArray();
         }
 
+        /// <summary>清空对话与发给模型的消息历史。运行中忽略（避免与后台回合竞态）。</summary>
+        public void Clear()
+        {
+            if (Busy) return;
+            _messages.Clear();
+            lock (_lock) _transcript.Clear();
+        }
+
         private void Add(string role, string text)
         {
             lock (_lock) _transcript.Add(new ChatLine(role, text));
