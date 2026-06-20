@@ -16,6 +16,7 @@ namespace TaiwuClaw.UI
         public static GUIStyle ButtonDanger;
         public static GUIStyle Transcript;
         public static GUIStyle Input;
+        public static GUIStyle InputArea;
         public static GUIStyle Hint;
 
         private static bool _init;
@@ -80,6 +81,11 @@ namespace TaiwuClaw.UI
             Input.fixedHeight = 26;
             Input.padding = new RectOffset(8, 6, 4, 4);
 
+            // 多行输入：去掉 fixedHeight 以便随内容竖向扩展，开 wordWrap 让长文本换行而非横向撑宽
+            InputArea = new GUIStyle(Input);
+            InputArea.fixedHeight = 0;
+            InputArea.wordWrap = true;
+
             Hint = new GUIStyle(GUI.skin.label);
             Hint.fontSize = 12;
             Hint.wordWrap = true;
@@ -88,7 +94,7 @@ namespace TaiwuClaw.UI
             // 复用游戏字体（找不到则各 style 保持 IMGUI 默认）
             Font game = GameFont.Resolve();
             if (game != null)
-                foreach (GUIStyle s in new[] { Window, Header, InfoBox, Button, ButtonDanger, Transcript, Input, Hint })
+                foreach (GUIStyle s in new[] { Window, Header, InfoBox, Button, ButtonDanger, Transcript, Input, InputArea, Hint })
                     s.font = game;
         }
 

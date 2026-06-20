@@ -21,7 +21,13 @@ namespace TaiwuClaw.UI
         private bool _visible;
         private string _input = "";
         private Vector2 _scroll;
+        private Vector2 _inputScroll;      // 输入栏超 5 行后的滚动位置
+        private float _inputWidth = 480f;  // 输入栏实际宽度（上一帧测得，用于算高）；首帧用回退值
         private Rect _window = new Rect(40, 40, 560, 460);
+
+        private const float WindowWidth = 560f;       // 固定窗宽，长文本换行而非横向撑窗
+        private const string InputControlName = "tw_chat_input";
+        private const int InputMaxLines = 5;           // 输入栏最多展开行数，超出转滚动
 
         private string _status = "";
         private float _statusTime;
@@ -81,7 +87,7 @@ namespace TaiwuClaw.UI
             float scale = CurrentScale;
             Matrix4x4 prev = GUI.matrix;
             GUI.matrix = Matrix4x4.Scale(new Vector3(scale, scale, 1f));
-            _window = GUILayout.Window(GetInstanceID(), _window, DrawWindow, "太吾百晓 · TaiwuClaw", TaiwuStyles.Window);
+            _window = GUILayout.Window(GetInstanceID(), _window, DrawWindow, "太吾百晓 · TaiwuClaw", TaiwuStyles.Window, GUILayout.Width(WindowWidth));
             GUI.matrix = prev;
         }
 
@@ -175,20 +181,56 @@ namespace TaiwuClaw.UI
             if (!string.IsNullOrEmpty(_status) && Time.time - _statusTime < 5f)
                 GUILayout.Label(_status, TaiwuStyles.Hint);
 
+            GUILayout.Label("Enter 发送 · Shift+Enter 换行", TaiwuStyles.Hint);
+
+            // 输入栏高度随内容竖向扩展，最多 InputMaxLines 行，超出转滚动
+            GUIStyle st = TaiwuStyles.InputArea;
+            float padV = st.padding.vertical;
+            float line = st.lineHeight;
+            float minH = line + padV;
+            float maxH = line * InputMaxLines + padV;
+            float desiredH = st.CalcHeight(new GUIContent(_input.Length == 0 ? " " : _input), _inputWidth);
+            float h = Mathf.Clamp(desiredH, minH, maxH);
+            bool overflow = desiredH > maxH + 0.5f;
+
+            // Enter 发送：在 TextArea 处理前吞掉非 Shift 的回车，避免它插入换行（Shift+Enter 留给换行）
+            var e = Event.current;
+            bool enterSend = e.type == EventType.KeyDown
+                             && (e.keyCode == KeyCode.Return || e.keyCode == KeyCode.KeypadEnter)
+                             && !e.shift
+                             && GUI.GetNameOfFocusedControl() == InputControlName;
+            if (enterSend) e.Use();
+
             GUILayout.BeginHorizontal();
             GUI.enabled = !_runner.Busy;
-            _input = GUILayout.TextField(_input, TaiwuStyles.Input, GUILayout.ExpandWidth(true));
+            GUILayout.BeginVertical();
+            GUI.SetNextControlName(InputControlName);
+            if (overflow)
+            {
+                _inputScroll = GUILayout.BeginScrollView(_inputScroll, GUILayout.Height(maxH));
+                _input = GUILayout.TextArea(_input, st, GUILayout.ExpandHeight(true));
+                GUILayout.EndScrollView();
+            }
+            else
+            {
+                _input = GUILayout.TextArea(_input, st, GUILayout.Height(h));
+            }
+            GUILayout.EndVertical();
+            // 记录输入列实际宽度，供下一帧算高（避免估算误差导致换行点漂移）
+            if (e.type == EventType.Repaint)
+            {
+                float w = GUILayoutUtility.GetLastRect().width;
+                if (w > 1f) _inputWidth = w;
+            }
             bool submit = GUILayout.Button(_runner.Busy ? "…" : "发送", TaiwuStyles.Button, GUILayout.Width(64));
             GUI.enabled = true;
             GUILayout.EndHorizontal();
 
-            bool enterPressed = Event.current.type == EventType.KeyDown
-                                && (Event.current.keyCode == KeyCode.Return || Event.current.keyCode == KeyCode.KeypadEnter);
-
-            if ((submit || enterPressed) && !_runner.Busy && !string.IsNullOrEmpty(_input.Trim()))
+            if ((submit || enterSend) && !_runner.Busy && !string.IsNullOrEmpty(_input.Trim()))
             {
                 string text = _input.Trim();
                 _input = "";
+                _inputScroll = Vector2.zero;
                 var t = new Thread(() => _runner.RunTurn(text)) { IsBackground = true, Name = "TaiwuClawAgent" };
                 t.Start();
             }
