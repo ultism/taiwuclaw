@@ -3,12 +3,13 @@ using Newtonsoft.Json.Linq;
 namespace TaiwuClaw.Core
 {
     /// <summary>
-    /// 一个可被 agent 调用的能力。新增能力只需实现本接口并向 ActionRegistry 注册，
-    /// 通信层（HttpHarnessServer）与调度层（MainThreadDispatcher）完全无需改动。
+    /// 一个可被 agent 调用的能力。新增能力只需实现本接口，再作为核心常驻（SkillRegistry.RegisterCore）
+    /// 或打包进一个技能（见 <see cref="ISkill"/> / <see cref="CodeSkill"/>）注册即可，agent 循环无需改动。
     /// </summary>
     public interface IAgentAction
     {
-        /// <summary>调用名，agent 在请求 {"name":...} 中使用。建议用 "域.动作" 形式，如 encyclopedia.query。</summary>
+        /// <summary>调用名，agent 在请求 {"name":...} 中使用。限 [a-zA-Z0-9_-]，<b>不能带点号</b>；
+        /// 用下划线分域，如 encyclopedia_query。</summary>
         string Name { get; }
 
         /// <summary>给 agent 看的自描述（参数、语义）。会被内置 list action 暴露。</summary>

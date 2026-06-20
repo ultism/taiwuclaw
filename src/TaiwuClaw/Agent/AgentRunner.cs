@@ -25,10 +25,9 @@ namespace TaiwuClaw.Agent
         private const int MaxSteps = 12;
 
         private readonly ILlmClient _client;
-        private readonly ActionRegistry _registry;
+        private readonly SkillRegistry _registry;
         private readonly MainThreadDispatcher _dispatcher;
         private readonly string _system;
-        private readonly JArray _tools;
         private readonly JArray _messages = new JArray();
 
         private readonly List<ChatLine> _transcript = new List<ChatLine>();
@@ -36,13 +35,14 @@ namespace TaiwuClaw.Agent
 
         public bool Busy { get; private set; }
 
-        public AgentRunner(ILlmClient client, ActionRegistry registry, MainThreadDispatcher dispatcher, string system)
+        public AgentRunner(ILlmClient client, SkillRegistry registry, MainThreadDispatcher dispatcher, string system)
         {
             _client = client;
             _registry = registry;
             _dispatcher = dispatcher;
-            _system = system;
-            _tools = registry.ToToolsJson();
+            // 技能目录是关闭态的常驻上下文，拼进系统提示（无技能时为空串，行为同旧版）
+            string catalog = registry.CatalogText();
+            _system = string.IsNullOrEmpty(catalog) ? system : system + "\n\n" + catalog;
         }
 
         public ChatLine[] Snapshot()
@@ -74,7 +74,9 @@ namespace TaiwuClaw.Agent
 
                 for (int step = 0; step < MaxSteps; step++)
                 {
-                    LlmResponse resp = _client.CreateMessage(_system, _tools, _messages);
+                    // 每步重建工具集：open_skill/close_skill 会改变可见工具，须实时反映
+                    JArray tools = _registry.ToToolsJson();
+                    LlmResponse resp = _client.CreateMessage(_system, tools, _messages);
 
                     // 关键：原样回灌助手内容块（含 thinking + signature），交错思考才能延续
                     _messages.Add(new JObject { ["role"] = "assistant", ["content"] = resp.Content });

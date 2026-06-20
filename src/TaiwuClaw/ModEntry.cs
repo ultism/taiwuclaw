@@ -21,9 +21,15 @@ namespace TaiwuClaw
         {
             _dispatcher = MainThreadDispatcher.Ensure();
 
-            var registry = new ActionRegistry();
-            registry.Register(new EncyclopediaQueryAction());
-            registry.Register(new ListActionsAction(registry));
+            // 技能注册表：核心能力常驻；扩展能力打包成技能、默认关闭、用时 open_skill 才进上下文。
+            var registry = new SkillRegistry();
+            registry.RegisterCore(new EncyclopediaQueryAction());
+
+            // 扩展能力在此 registry.RegisterSkill(new XxxSkill()); —— 一旦注册，open_skill/close_skill
+            // 与技能目录会自动出现；零技能时不产生任何额外上下文开销。
+            // TODO(磁盘技能): 扫描 persistentDataPath/TaiwuClaw/Skills/*/SKILL.md 解析为 markdown playbook
+            //   技能（ISkill，Actions 为空）并在此 RegisterSkill；接口已就位，仅差文件加载器。
+            // TODO(配置系统): 技能增多后改造 LlmConfig，支持按技能开关/各自参数。
 
             var cfg = LlmConfig.LoadOrCreate(); // 缺失则写模板返回 null
             bool ready = cfg != null && cfg.IsReady;

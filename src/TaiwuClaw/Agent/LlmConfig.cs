@@ -5,8 +5,12 @@ using UnityEngine;
 namespace TaiwuClaw.Agent
 {
     /// <summary>
-    /// LLM 配置，从 &lt;游戏&gt;/Mod/TaiwuClaw/llm.json 读取（不入库，含密钥）。
+    /// LLM 配置，从 persistentDataPath/TaiwuClaw/llm.json 读取（不入库，含密钥）。
     /// 首次运行若文件不存在则写出模板并返回 null。
+    ///
+    /// TODO(配置系统重构)：技能（见 Core/SkillRegistry）增多后本结构需扩展——
+    ///   至少支持「默认开启哪些技能」「按技能各自参数」「磁盘技能目录开关」；
+    ///   单层扁平 json 会变臃肿，届时考虑拆分 sections 或独立 skills 配置块。
     /// </summary>
     public class LlmConfig
     {
