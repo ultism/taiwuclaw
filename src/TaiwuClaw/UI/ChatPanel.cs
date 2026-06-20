@@ -58,20 +58,33 @@ namespace TaiwuClaw.UI
 
             if (!_visible) return;
 
+            TaiwuStyles.EnsureInit();
+
             // IMGUI 不跟随游戏 UGUI 缩放，自己按屏幕高缩放（4K≈2×）
             float scale = _uiScale > 0f ? _uiScale : Mathf.Clamp(Screen.height / 1080f, 1f, 4f);
             Matrix4x4 prev = GUI.matrix;
             GUI.matrix = Matrix4x4.Scale(new Vector3(scale, scale, 1f));
-            _window = GUILayout.Window(GetInstanceID(), _window, DrawWindow, "TaiwuClaw 助手  (Shift+F8 开关)");
+            _window = GUILayout.Window(GetInstanceID(), _window, DrawWindow, "太吾百晓 · TaiwuClaw", TaiwuStyles.Window);
             GUI.matrix = prev;
         }
 
         private void DrawWindow(int id)
         {
+            // 标题行：金字标题 + 右上角关闭
+            GUILayout.BeginHorizontal();
+            GUILayout.Label("百晓册助手", TaiwuStyles.Header);
+            GUILayout.FlexibleSpace();
+            GUILayout.Label("Shift+F8 开关", TaiwuStyles.Hint);
+            if (GUILayout.Button("✕", TaiwuStyles.ButtonDanger, GUILayout.Width(30)))
+                _visible = false;
+            GUILayout.EndHorizontal();
+            GUILayout.Space(4);
+
             if (!_ready)
             {
-                GUILayout.Label("未配置 LLM。请编辑以下文件填入 apiKey 后重启游戏：");
-                GUILayout.TextField(_configPath);
+                GUILayout.Label("未配置 LLM。请编辑以下文件填入 apiKey 后重启游戏：", TaiwuStyles.Hint);
+                GUILayout.TextField(_configPath, TaiwuStyles.Input);
+                GUILayout.Space(4);
                 GUI.DragWindow();
                 return;
             }
@@ -79,27 +92,31 @@ namespace TaiwuClaw.UI
             string transcript = BuildText();
 
             GUILayout.BeginHorizontal();
-            if (GUILayout.Button("复制全部", GUILayout.Width(80)))
+            if (GUILayout.Button("复制全部", TaiwuStyles.Button, GUILayout.Width(80)))
                 GUIUtility.systemCopyBuffer = transcript;
             GUI.enabled = !_runner.Busy;
-            if (GUILayout.Button("清空历史", GUILayout.Width(80)))
+            if (GUILayout.Button("清空历史", TaiwuStyles.ButtonDanger, GUILayout.Width(80)))
             {
                 _runner.Clear();
                 _scroll = Vector2.zero;
             }
             GUI.enabled = true;
             GUILayout.FlexibleSpace();
+            if (_runner.Busy)
+                GUILayout.Label("思考中…", TaiwuStyles.Hint);
             GUILayout.EndHorizontal();
+            GUILayout.Space(4);
 
             // 只读但可选中复制（每帧用最新文本重建，编辑被丢弃）
             _scroll = GUILayout.BeginScrollView(_scroll, GUILayout.Height(330));
-            GUILayout.TextArea(transcript, GUILayout.ExpandHeight(true));
+            GUILayout.TextArea(transcript, TaiwuStyles.Transcript, GUILayout.ExpandHeight(true));
             GUILayout.EndScrollView();
+            GUILayout.Space(4);
 
             GUILayout.BeginHorizontal();
             GUI.enabled = !_runner.Busy;
-            _input = GUILayout.TextField(_input, GUILayout.ExpandWidth(true));
-            bool submit = GUILayout.Button(_runner.Busy ? "…" : "发送", GUILayout.Width(64));
+            _input = GUILayout.TextField(_input, TaiwuStyles.Input, GUILayout.ExpandWidth(true));
+            bool submit = GUILayout.Button(_runner.Busy ? "…" : "发送", TaiwuStyles.Button, GUILayout.Width(64));
             GUI.enabled = true;
             GUILayout.EndHorizontal();
 

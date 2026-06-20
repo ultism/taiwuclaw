@@ -16,3 +16,6 @@
 
 # LLM 配置（含密钥，绝不入库；运行时生成在 persistentDataPath）
 llm.json
+
+# 本地开发笔记（含本机路径，不上传）
+CLAUDE.md
