@@ -158,8 +158,8 @@ namespace TaiwuClaw.UI
                 var h = hits[i];
                 if (GUILayout.Button("📖 " + Leaf(h.Title), TaiwuStyles.Button, GUILayout.ExpandWidth(true)))
                 {
-                    if (EncyclopediaNavigator.OpenEntry(h.Key, out string err))
-                        SetStatus("已在游戏内打开：" + Leaf(h.Title));
+                    if (EncyclopediaNavigator.OpenEntry(h.Key, Leaf(h.Title), this, SetStatus, out string err))
+                        SetStatus("正在打开：" + Leaf(h.Title));
                     else
                         SetStatus("打开失败：" + err);
                 }
