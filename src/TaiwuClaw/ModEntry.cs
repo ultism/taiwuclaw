@@ -23,7 +23,9 @@ namespace TaiwuClaw
 
             // 技能注册表：核心能力常驻；扩展能力打包成技能、默认关闭、用时 open_skill 才进上下文。
             var registry = new SkillRegistry();
-            registry.RegisterCore(new EncyclopediaQueryAction());
+            registry.RegisterCore(new EncyclopediaQueryAction());   // 模糊/相关度
+            registry.RegisterCore(new EncyclopediaFullTextAction()); // 全文精确子串
+            registry.RegisterCore(new EncyclopediaTitleAction());    // 词条名精确子串
 
             // 扩展能力在此 registry.RegisterSkill(new XxxSkill()); —— 一旦注册，open_skill/close_skill
             // 与技能目录会自动出现；零技能时不产生任何额外上下文开销。

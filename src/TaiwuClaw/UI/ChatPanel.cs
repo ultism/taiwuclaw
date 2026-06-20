@@ -199,7 +199,7 @@ namespace TaiwuClaw.UI
         // 把最近一次检索命中的词条渲染成可点链接，点击在游戏内打开原生百晓册原文
         private void DrawEntryLinks()
         {
-            var hits = EncyclopediaQueryAction.RecentHits; // 引用快照，主线程读
+            var hits = EncyclopediaSearch.RecentHits; // 引用快照，主线程读
             if (hits == null || hits.Count == 0) return;
 
             GUILayout.Label("相关词条（点击在游戏内打开原文）", TaiwuStyles.Hint);

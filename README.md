@@ -8,6 +8,12 @@
 游戏启动时 `EncyclopediaContent.Init()` 已把它们解析进 `EncyclopediaContent.DataArray`（public static）。
 本 MOD 复用这份已解析数据，自己做全文过滤——游戏内置搜索只搜标题、不搜正文，所以全文查询需自行遍历。
 
+检索提供三种方式（共享 `Actions/EncyclopediaSearch`，命中统一喂 UI 跳转链接）：
+
+- `encyclopedia_query`——模糊/相关度（BM25，分词、容错、按相关度排序），通用首选。
+- `encyclopedia_fulltext`——全文精确子串（正文+引用表，多词取 AND），查确切术语/数值/短语。
+- `encyclopedia_title`——词条名精确子串（只搜标题路径），按名定位词条。
+
 ## 环境
 
 - 游戏 Unity 2022.3.62f2（Mono 后端）
@@ -68,8 +74,9 @@ src/TaiwuClaw/
   ModEntry.cs        入口：组装 registry + dispatcher + client + runner + 面板
   Core/              IAgentAction / SkillRegistry（渐进披露）/ ISkill·CodeSkill
                      SkillMetaActions（open_skill·close_skill）/ MainThreadDispatcher
-  Actions/           EncyclopediaQueryAction（检索）/ EncyclopediaNavigator（原生跳转）
-                     EncyclopediaIndex（BM25）/ EncyclopediaText
+  Actions/           EncyclopediaSearch（共享检索服务+命中记录）
+                     EncyclopediaQueryAction（模糊）/ EncyclopediaKeywordActions（全文·词条名）
+                     EncyclopediaNavigator（原生跳转）/ EncyclopediaIndex（BM25）/ EncyclopediaText
   Agent/             ILlmClient / AnthropicMessagesClient / AgentRunner / LlmConfig
   UI/                ChatPanel（IMGUI，F8）/ TaiwuStyles（皮肤）/ GameFont（字体发现）
 docs/                反编译/、ui/ —— 硬核反编译结论与设计取舍归档
