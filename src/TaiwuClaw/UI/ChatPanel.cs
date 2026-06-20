@@ -3,6 +3,7 @@ using System.Threading;
 using TaiwuClaw.Actions;
 using TaiwuClaw.Agent;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace TaiwuClaw.UI
 {
@@ -25,6 +26,10 @@ namespace TaiwuClaw.UI
         private string _status = "";
         private float _statusTime;
 
+        // UGUI 透明拦截层：可见时盖住窗口区域，挡掉透传到游戏 UI 的点击
+        private GameObject _blocker;
+        private RectTransform _blockerRect;
+
         public static void Create(AgentRunner runner, string configPath, bool ready, float uiScale)
         {
             var go = new GameObject("TaiwuClawChatPanel");
@@ -43,6 +48,15 @@ namespace TaiwuClaw.UI
 
         // 切换键。通过 IMGUI 的 Event.current 检测，不依赖新/旧 Input System。
         private static readonly KeyCode ToggleKey = KeyCode.F8;
+
+        // IMGUI 不跟随 UGUI 缩放，按屏幕高自动缩放（4K≈2×）
+        private float CurrentScale => _uiScale > 0f ? _uiScale : Mathf.Clamp(Screen.height / 1080f, 1f, 4f);
+
+        private void Update()
+        {
+            if (_blocker == null) EnsureBlocker();
+            UpdateBlocker();
+        }
 
         private void OnGUI()
         {
@@ -64,12 +78,50 @@ namespace TaiwuClaw.UI
 
             TaiwuStyles.EnsureInit();
 
-            // IMGUI 不跟随游戏 UGUI 缩放，自己按屏幕高缩放（4K≈2×）
-            float scale = _uiScale > 0f ? _uiScale : Mathf.Clamp(Screen.height / 1080f, 1f, 4f);
+            float scale = CurrentScale;
             Matrix4x4 prev = GUI.matrix;
             GUI.matrix = Matrix4x4.Scale(new Vector3(scale, scale, 1f));
             _window = GUILayout.Window(GetInstanceID(), _window, DrawWindow, "太吾百晓 · TaiwuClaw", TaiwuStyles.Window);
             GUI.matrix = prev;
+        }
+
+        // 建一个 ScreenSpaceOverlay Canvas + 透明 Image（raycastTarget）作输入拦截层。
+        // IMGUI 与 UGUI 是两套独立输入管线：拦截层让游戏的 EventSystem 射线先打到它，
+        // 游戏 UI 收不到点击；而我们自己的 IMGUI 控件走旧事件管线，照常响应。
+        private void EnsureBlocker()
+        {
+            _blocker = new GameObject("TaiwuClawInputBlocker");
+            DontDestroyOnLoad(_blocker);
+            var canvas = _blocker.AddComponent<Canvas>();
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            canvas.sortingOrder = short.MaxValue; // 盖在游戏所有 UI 之上
+            _blocker.AddComponent<GraphicRaycaster>();
+
+            var img = new GameObject("Area").AddComponent<Image>();
+            img.transform.SetParent(_blocker.transform, false);
+            img.color = new Color(0f, 0f, 0f, 0f); // 全透明，但 raycastTarget 仍拦截
+            img.raycastTarget = true;
+            _blockerRect = img.rectTransform;
+            _blockerRect.anchorMin = _blockerRect.anchorMax = _blockerRect.pivot = new Vector2(0f, 1f); // 左上为原点，对齐 GUI 坐标系
+            _blocker.SetActive(false);
+        }
+
+        private void UpdateBlocker()
+        {
+            if (_blocker == null) return;
+            bool show = _visible;
+            if (_blocker.activeSelf != show) _blocker.SetActive(show);
+            if (!show) return;
+
+            float scale = CurrentScale;
+            // GUI 坐标 y 向下；左上锚点的 anchoredPosition y 向上，故取负
+            _blockerRect.anchoredPosition = new Vector2(_window.x * scale, -_window.y * scale);
+            _blockerRect.sizeDelta = new Vector2(_window.width * scale, _window.height * scale);
+        }
+
+        private void OnDestroy()
+        {
+            if (_blocker != null) Destroy(_blocker);
         }
 
         private void DrawWindow(int id)

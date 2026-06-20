@@ -50,6 +50,15 @@
       <HintPath>$(ManagedDir)\UnityEngine.TextRenderingModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
+    <!-- UGUI 输入拦截层：Canvas/CanvasGroup（UIModule）+ Image/GraphicRaycaster（UI） -->
+    <Reference Include="UnityEngine.UIModule">
+      <HintPath>$(ManagedDir)\UnityEngine.UIModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.UI">
+      <HintPath>$(ManagedDir)\UnityEngine.UI.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
     <Reference Include="Newtonsoft.Json">
       <HintPath>$(ManagedDir)\Newtonsoft.Json.dll</HintPath>
       <Private>false</Private>
