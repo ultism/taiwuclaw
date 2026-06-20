@@ -1,5 +1,6 @@
 using System.Text;
 using System.Threading;
+using TaiwuClaw.Actions;
 using TaiwuClaw.Agent;
 using UnityEngine;
 
@@ -20,6 +21,9 @@ namespace TaiwuClaw.UI
         private string _input = "";
         private Vector2 _scroll;
         private Rect _window = new Rect(40, 40, 560, 460);
+
+        private string _status = "";
+        private float _statusTime;
 
         public static void Create(AgentRunner runner, string configPath, bool ready, float uiScale)
         {
@@ -108,10 +112,16 @@ namespace TaiwuClaw.UI
             GUILayout.Space(4);
 
             // 只读但可选中复制（每帧用最新文本重建，编辑被丢弃）
-            _scroll = GUILayout.BeginScrollView(_scroll, GUILayout.Height(330));
+            _scroll = GUILayout.BeginScrollView(_scroll, GUILayout.Height(300));
             GUILayout.TextArea(transcript, TaiwuStyles.Transcript, GUILayout.ExpandHeight(true));
             GUILayout.EndScrollView();
             GUILayout.Space(4);
+
+            DrawEntryLinks();
+
+            // 操作状态（导航成功/失败），5 秒后淡出
+            if (!string.IsNullOrEmpty(_status) && Time.time - _statusTime < 5f)
+                GUILayout.Label(_status, TaiwuStyles.Hint);
 
             GUILayout.BeginHorizontal();
             GUI.enabled = !_runner.Busy;
@@ -132,6 +142,44 @@ namespace TaiwuClaw.UI
             }
 
             GUI.DragWindow();
+        }
+
+        // 把最近一次检索命中的词条渲染成可点链接，点击在游戏内打开原生百晓册原文
+        private void DrawEntryLinks()
+        {
+            var hits = EncyclopediaQueryAction.RecentHits; // 引用快照，主线程读
+            if (hits == null || hits.Count == 0) return;
+
+            GUILayout.Label("相关词条（点击在游戏内打开原文）", TaiwuStyles.Hint);
+            const int perRow = 2;
+            for (int i = 0; i < hits.Count; i++)
+            {
+                if (i % perRow == 0) GUILayout.BeginHorizontal();
+                var h = hits[i];
+                if (GUILayout.Button("📖 " + Leaf(h.Title), TaiwuStyles.Button, GUILayout.ExpandWidth(true)))
+                {
+                    if (EncyclopediaNavigator.OpenEntry(h.Key, out string err))
+                        SetStatus("已在游戏内打开：" + Leaf(h.Title));
+                    else
+                        SetStatus("打开失败：" + err);
+                }
+                if (i % perRow == perRow - 1 || i == hits.Count - 1) GUILayout.EndHorizontal();
+            }
+            GUILayout.Space(4);
+        }
+
+        // 标题路径取末段（"甲 / 乙 / 丙" → "丙"），按钮更紧凑
+        private static string Leaf(string titlePath)
+        {
+            if (string.IsNullOrEmpty(titlePath)) return "(无标题)";
+            int idx = titlePath.LastIndexOf(" / ", System.StringComparison.Ordinal);
+            return idx >= 0 ? titlePath.Substring(idx + 3) : titlePath;
+        }
+
+        private void SetStatus(string msg)
+        {
+            _status = msg;
+            _statusTime = Time.time;
         }
 
         private string BuildText()
