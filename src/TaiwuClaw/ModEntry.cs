@@ -28,6 +28,9 @@ namespace TaiwuClaw
             var cfg = LlmConfig.LoadOrCreate(); // 缺失则写模板返回 null
             bool ready = cfg != null && cfg.IsReady;
 
+            // 复用游戏字体（IMGUI）：可在 llm.json 用 fontName 锁定，留空则自动发现
+            GameFont.PreferredName = cfg?.FontName ?? "";
+
             AgentRunner runner = null;
             if (ready)
             {

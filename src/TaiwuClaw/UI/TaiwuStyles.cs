@@ -84,6 +84,12 @@ namespace TaiwuClaw.UI
             Hint.fontSize = 12;
             Hint.wordWrap = true;
             Hint.normal.textColor = new Color(0.7f, 0.7f, 0.78f);
+
+            // 复用游戏字体（找不到则各 style 保持 IMGUI 默认）
+            Font game = GameFont.Resolve();
+            if (game != null)
+                foreach (GUIStyle s in new[] { Window, Header, InfoBox, Button, ButtonDanger, Transcript, Input, Hint })
+                    s.font = game;
         }
 
         private static Texture2D Tex(Color c)

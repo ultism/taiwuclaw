@@ -24,6 +24,8 @@ namespace TaiwuClaw.Agent
         public string Effort = "";
         /// <summary>面板 UI 缩放；0=按屏幕高自动(屏幕高/1080)，4K≈2×。手动可填 1.5/2/2.5…</summary>
         public float UiScale = 0f;
+        /// <summary>复用游戏字体：留空=自动发现；填字体名(子串即可)可精确锁定。首启日志会列出所有候选字体名。</summary>
+        public string FontName = "";
         public string SystemPrompt =
             "你是《太吾绘卷》的游戏内助手。你可以使用 encyclopedia_query 工具检索百晓册（游戏内置百科）" +
             "来回答关于游戏机制、数值、概率、配方、物品、功法等问题。优先检索后基于结果作答，不要凭空编造。";
@@ -83,6 +85,7 @@ namespace TaiwuClaw.Agent
                 c.Thinking = o["thinking"]?.Value<bool>() ?? c.Thinking;
                 c.Effort = (string)o["effort"] ?? "";
                 c.UiScale = o["uiScale"]?.Value<float>() ?? 0f;
+                c.FontName = (string)o["fontName"] ?? "";
                 c.SystemPrompt = (string)o["systemPrompt"] ?? c.SystemPrompt;
                 return c;
             }
@@ -105,6 +108,7 @@ namespace TaiwuClaw.Agent
             ["thinking"] = Thinking,
             ["effort"] = Effort,
             ["uiScale"] = UiScale,
+            ["fontName"] = FontName,
             ["systemPrompt"] = SystemPrompt,
         };
     }
